@@ -1,3 +1,4 @@
+#include <getopt.h>
 #include <gpu_cfg_generator.h>
 #include "crc.h"
 
@@ -488,6 +489,8 @@ int main(int argc, char *argv[]) {
 
 	int ssdflag = 0;
 	int pcieflag = 0;
+	int oculinkflag = 0;
+	int oculink_pcie_gen = PCIE_8X1;
 	char *serialvalue = "";
 	char *pcbvalue = "";
 	char *outfilename = "eeprom.bin";
@@ -496,7 +499,7 @@ int main(int argc, char *argv[]) {
 
 	opterr = 0;
 
-	while ((c = getopt (argc, argv, "andbvs:p:o:i:")) != -1)
+	while ((c = getopt (argc, argv, "andblvs:p:o:i:g:")) != -1)
 	switch (c)
 	{
 	case 'a':
@@ -511,6 +514,9 @@ int main(int argc, char *argv[]) {
 	case 'b':
 		pcieflag = 1;
 		break;
+	case 'l':
+		oculinkflag = 1;
+		break;
 	case 's':
 		serialvalue = optarg;
 		break;
@@ -522,6 +528,9 @@ int main(int argc, char *argv[]) {
 		break;
 	case 'i':
 		infilename = optarg;
+		break;
+	case 'g':
+		oculink_pcie_gen = atoi(optarg);
 		break;
 	case 'v':
 		verbose = true;
@@ -546,10 +555,15 @@ int main(int argc, char *argv[]) {
 		return 0;
 	}
 
+	if (oculink_pcie_gen < 0 || oculink_pcie_gen > 2) {
+		printf("Invalid PCIe generation specified for Oculink. Must be 0 for 1x8, 1 for 1x4, or 2 for 2x4.\n");
+		return 1;
+	}
+
 	printf("Descriptor Version: %d %d\n", 0, 1);
 
-	printf ("amd_gpu = %d, nv_gpu = %d, ssd = %d, module SN = %s pcb SN = %s output file = %s\n",
-		amd_gpuflag, nv_gpuflag, ssdflag, serialvalue, pcbvalue, outfilename);
+	printf ("amd_gpu = %d, nv_gpu = %d, ssd = %d, pcie = %d, oculink = %d, module SN = %s pcb SN = %s oculink_gen = %d output file = %s\n",
+		amd_gpuflag, nv_gpuflag, ssdflag, pcieflag, oculinkflag, serialvalue, pcbvalue, oculink_pcie_gen, outfilename);
 
 	if (amd_gpuflag) {
 		if (pcbvalue) {
@@ -570,6 +584,11 @@ int main(int argc, char *argv[]) {
 
 	if (pcieflag) {
 		program_eeprom(serialvalue, (void *)&pcie_accessory_cfg, sizeof(pcie_accessory_cfg), outfilename);
+	}
+
+	if (oculinkflag) {
+		oculink_cfg.pcie_cfg = oculink_pcie_gen;
+		program_eeprom(serialvalue, (void *)&oculink_cfg, sizeof(oculink_cfg), outfilename);
 	}
 
 	return 0;
