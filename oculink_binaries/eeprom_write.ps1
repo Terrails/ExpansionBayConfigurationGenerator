@@ -79,5 +79,3 @@ if ($errors.Count -eq 0) {
         Write-Verbose ("Offset 0x{0:X4}: expected {1:X2}, read {2:X2}" -f $e.Offset, $e.Expected, $e.Read)
     }
 }
-
-Pop-Location
